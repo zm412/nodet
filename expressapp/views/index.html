@@ -1,0 +1,102 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/public/style.css">
+  <style>
+    code {
+      background-color: whitesmoke;
+    }
+  </style>
+</head>
+<body>
+<header>
+</header>
+<br>
+<div id ='sampleposting'>
+  <h2 style="text-align: left">Test API responses</h2>
+  <form action="/api/add_country" method="post" class="border">
+    <h4>Test post to /api/country</h4>
+    <label for="title" >Country</label>
+    <input type="text" id="title" name="name" value=""><br>
+    <input type="submit" value="Add country">
+  </form>
+
+   <ul>
+    {{#each countries}}
+      <li>{{value.data.country}}, id: {{this.key}}
+    {{/each}}
+   </ul>
+
+  <h4>Find country by id /api/country/{countryid}</h4>
+      <form action="/api/country" method="post" class="border">
+        <input type="text" name="country_id"><br>
+        <input type="submit" value="Find info">
+      </form>
+<!--
+   <ul>
+    {{#each countries}}
+      <li> <a href="/api/country/{{this.key}}">  {{value.data.country}}</a>, id: {{this.key}} </li>
+    {{/each}}
+   </ul>
+-->
+  <form method="post" action="/api/add_satellite"  class="border">
+    <h4>Test post to /api/add_satellite</h4>
+    <label for="sat_name">Satellite name</label>
+    <input type="text" name="sat_name" value=""><br>
+    <label for="country">Country</label>
+      <select id="country" name="country">
+      {{#each countries}}
+        <option value="{{value.data.country}}">{{value.data.country}}</option>
+      {{/each}}
+      </select>
+    <input type="submit" value="Submit">
+  </form>
+
+    {{#each data}}
+      {{value.data.sat_country}}  {{ value.data.satellite }}
+    {{/each}}
+
+  <form action="" method="post" id="satellite_n" class="border">
+    <h4>Test post to /api/books/{bookid}</h4>
+    <label for="idinputtest">BookId to comment on</label>
+    <input type="text" name="id" value="" id="idinputtest"><br>
+    <label for="comment">Comment</label>
+    <input type="text" id="comment" name="comment" value=""><br>
+    <input type="submit" value="Submit">
+  </form>
+  <ul>
+    {{#each satellites}}
+        <li>{{value.data.satellite}}, id: {{this.id}}</li>
+    {{/each}}
+  </ul>
+
+
+</div>
+<hr style='margin: 50px'>
+<div id='sampleui'>
+  <h2 style="text-align: left">Sample Front-End</h2>
+  <form id="newBookForm" class="border">
+    <label for="bookTitleToAdd">New Book Title</label>
+    <input type="text" id="bookTitleToAdd" name="title" placeholder="Moby Dick" style="width: 295px">
+    <button type="submit" value="Submit" id="newBook">Submit New Book!</button>
+  </form>
+  <div id='display'></div>
+  <div id='bookDetail' class='border'>
+    <p id='detailTitle'>Select a book to see it's details and comments</p>
+    <ol id='detailComments'></ol>
+  </div>
+  <button id='deleteAllBooks'>Delete all books...</button>
+</div>
+<hr style='margin: 50px'>
+{{#each data}}
+{{value.country_name}}
+{{/each}}
+
+<script src="/public/main.js"></script>
+<script>
+
+</script>
+</body>
+</html>

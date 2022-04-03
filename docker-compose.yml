@@ -1,0 +1,15 @@
+version: '2'
+services:
+  nodeapp:
+    restart: always
+    build:
+      context: ./expressapp/
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    stdin_open: true
+    command: npm run start
+    volumes:
+      - ./expressapp:/code/
+      - /code/node_modules
+ 

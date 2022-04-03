@@ -1,0 +1,31 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/public/style.css">
+  <style>
+    code {
+      background-color: whitesmoke;
+    }
+  </style>
+</head>
+<body>
+<header>
+</header>
+
+    <h4> {{ country_name }} </h4>
+
+   <ul>
+    {{#each satellites}}
+      <li>{{value.data.satellite}}
+    {{/each}}
+   </ul>
+
+  <a href="/">Back</a>
+<script src="/public/main.js"></script>
+<script>
+
+</script>
+</body>
+</html>
