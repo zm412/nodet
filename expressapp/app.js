@@ -47,6 +47,8 @@ app.use("/graphql", ExpressGraphQL({
 */
 const couch = new NodeCouchDb({
   auth: {
+    user: 'admin',
+    password: '4455'
   }
 })
 
@@ -67,32 +69,63 @@ app.engine('html', require('hbs').__express);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
-app.get("/", function(request, response){
 
-  couch.get(dbName, viewAllData).then(
-    function(data, headers, status) {
-      console.log(data.data.rows, 'data')
-      response.render('index', {
-        'data': data.data.rows,
-        'countries': data.data.rows.filter(n => n.value.data.type == 'country'),
-        'satellites': data.data.rows.filter(n => n.value.data.type == 'satellite'),
-      })
+app.get("/api/get_countries/:page_num/:limit", function(req, res){
+  let page_num = req.params.page_num;
+  let limit = req.params.limit;
+
+
+  const queryOptions = {
+    reduce:false,
+    limit,
+    skip:(page_num-1 )*limit
+  };
+
+      console.log(queryOptions, 'query')
+  couch.get(dbName, viewByCountry, queryOptions).then(({data, headers, status}) => {
+ // couch.get(dbName, viewCountryUrl, [0,3]).then(({data, headers, status}) => {
+      console.log(data, 'fullData')
+      console.log(data.rows, 'dataPL')
+      console.log(data.total_rows, 'dataDK')
+      console.log(data.offset, 'dataSO')
+      console.log(typeof data, 'type')
+      //res.render('index', JSON.stringify(data))
+      res.json(data)
     },
     function(err){
       console.log(err, 'err')
-      response.send(err)
+      res.send(err)
     }
   )
 
 });
 
-app.post('/api/country', function(req, res){
-  const id = req.body.country_id;
-  let name; 
-  
+
+app.get("/", function(req, res){
+
+  couch.get(dbName, viewAllData).then(
+    function(data, headers, status) {
+      //console.log(data, 'data')
+      res.render('index', {
+        'data': data.data.rows,
+        'countries': data.data.rows.filter(n => n.value.type == 'country'),
+        'satellites': data.data.rows.filter(n => n.value.type == 'satellite'),
+      })
+    },
+    function(err){
+      console.log(err, 'err')
+      res.send(err)
+    }
+  )
+
+});
+
+app.get('/api/country/:id', function(req, res){
+  let id = req.params.id;
+  let name;
+ 
   couch.get(dbName, id).then(
     function(data, headers, status) {
-      console.log(data, 'ISDLKJLJ')
       name = data.data.country_name
     
     },
@@ -103,7 +136,38 @@ app.post('/api/country', function(req, res){
  
   couch.get(dbName, viewAllData).then(
     function(data, headers, status) {
-      console.log(data.data.rows, 'data')
+      //console.log(data.data.rows, 'data')
+      res.render('objectsList', {
+        'country_name': name,
+        'satellites': data.data.rows.filter(n => n.value.sat_country==name)
+      })
+    },
+    function(err){
+      console.log(err, 'err')
+      res.send(err)
+    }
+  )
+}
+  )
+
+app.post('/api/country', function(req, res){
+  const id = req.body.country_id;
+  let name; 
+  
+  couch.get(dbName, id).then(
+    function(data, headers, status) {
+      //console.log(data, 'ISDLKJLJ')
+      name = data.data.country_name
+    
+    },
+    function(err){
+      console.log(err, 'err')
+    }
+  )
+ 
+  couch.get(dbName, viewAllData).then(
+    function(data, headers, status) {
+      //console.log(data.data.rows, 'data')
       res.render('objectsList', {
         'country_name': name,
         'satellites': data.data.rows.filter(n => n.value.data.sat_country==name)
@@ -118,31 +182,33 @@ app.post('/api/country', function(req, res){
 
 app.post('/api/add_country', function(req, res){
   const name = req.body.name;
-  console.log(name, 'name')
-  couch.uniqid()
-    .then(function(ids){
-      const id = ids[0];
-      couch.insert(dbName, {
-        _id: id,
-        type: 'country',
-        country_name: name
+  if(name != ''){
+
+    couch.uniqid()
+      .then(function(ids){
+        const id = ids[0];
+        couch.insert(dbName, {
+          _id: id,
+          type: 'country',
+          country_name: name
+        })
+          .then(
+            function(data, headers, status){
+              res.redirect('/');
+            },
+            function(err){
+              res.send(err);
+            },
+          )
       })
-        .then(
-          function(data, headers, status){
-            res.redirect('/');
-          },
-          function(err){
-            res.send(err);
-          },
-        )
-    })
+  }else{
+  }
+  
 })
 
 app.post('/api/add_satellite', function(req, res){
   let sat_name = req.body.sat_name;
   let sat_country = req.body.country;
-
-  console.log(req.body, 'name')
 
   couch.uniqid()
     .then(function(ids){
