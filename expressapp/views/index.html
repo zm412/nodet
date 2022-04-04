@@ -18,12 +18,28 @@
 
   <h2 style="text-align: left">Test API responses</h2>
 
+  <div>
     <h4>Get countries</h4>
     <button id='get_countries_button'>Get countries</button>
+      3 <input class='quantity_i' type="radio" name='country' value="3">
+      5 <input class='quantity_i' type="radio" name='country' checked value="5">
+      10 <input class='quantity_i' type="radio"name='country' value="10">
     <ul id='country_list'></ul>
     <div id="paginat_system"></div>
+  </div>
+  <hr>
 
+  <div>
+    <h4>Get satellites</h4>
+    <button id='get_satellites_button'>Get satellites</button>
+      3 <input class='quantity_n' type="radio" name='satellite' value="3">
+      5 <input class='quantity_n' type="radio" name='satellite' checked value="5">
+      10 <input class='quantity_n' type="radio"name='satellite' value="10">
+    <ul id='satellite_list'></ul>
+    <div id="paginat_system2"></div>
+  </div>
 
+  <hr>
   <form action="/api/add_country" method="post" class="border">
     <h4>Test post to /api/country</h4>
     <label for="title" >Country</label>
@@ -37,18 +53,14 @@
     {{/each}}
    </ul>
 
+  <hr>
   <h4>Find country by id /api/country</h4>
       <form action="/api/country" method="post" class="border">
         <input type="text" name="country_id"><br>
         <input type="submit" value="Find info">
       </form>
-<!--
-   <ul>
-    {{#each countries}}
-      <li> <a href="/api/country/{{this.key}}">  {{value.data.country}}</a>, id: {{this.key}} </li>
-    {{/each}}
-   </ul>
--->
+
+  <hr>
   <form method="post" action="/api/add_satellite"  class="border">
     <h4>Test post to /api/add_satellite</h4>
     <label for="sat_name">Satellite name</label>
@@ -62,99 +74,105 @@
     <input type="submit" value="Submit">
   </form>
 
-    {{#each data}}
-      {{value.sat_country}}  {{ value.satellite_name }}
-    {{/each}}
-
-  <form action="" method="post" id="satellite_n" class="border">
-    <h4>Test post to /api/books/{bookid}</h4>
-    <label for="idinputtest">BookId to comment on</label>
-    <input type="text" name="id" value="" id="idinputtest"><br>
-    <label for="comment">Comment</label>
-    <input type="text" id="comment" name="comment" value=""><br>
-    <input type="submit" value="Submit">
-  </form>
-  <ul>
-    {{#each satellites}}
-        <li>{{value.satellite_name}}, id: {{this.id}}</li>
-    {{/each}}
-  </ul>
-
-
-</div>
 <hr style='margin: 50px'>
-<div id='sampleui'>
-  <h2 style="text-align: left">Sample Front-End</h2>
-  <form id="newBookForm" class="border">
-    <label for="bookTitleToAdd">New Book Title</label>
-    <input type="text" id="bookTitleToAdd" name="title" placeholder="Moby Dick" style="width: 295px">
-    <button type="submit" value="Submit" id="newBook">Submit New Book!</button>
-  </form>
-  <div id='display'></div>
-  <div id='bookDetail' class='border'>
-    <p id='detailTitle'>Select a book to see it's details and comments</p>
-    <ol id='detailComments'></ol>
-  </div>
-  <button id='deleteAllBooks'>Delete all books...</button>
-</div>
-<hr style='margin: 50px'>
-{{#each data}}
-{{value.country_name}}
-{{/each}}
-
 <script src="/public/main.js"></script>
 <script>
-  const auctions = (() => {
-    let page_num = 1;
-    let limit = 5;
-    let quantity = 0;
+
+  const countries = (() => {
 
     document.querySelector('#get_countries_button').addEventListener('click', (e) => {
-       get_list_countries(); 
-      })
-      
-    async function get_list_countries(){
-        let country_list = document.querySelector('#country_list');
-        country_list.innerHTML = '';
-
-        let url = `/api/get_countries/${page_num}/${limit}`;
-        const _res_json = await fetch(url).then(response => response.json());
-
-        console.log( _res_json, 'res_json')
-        _res_json.rows.map(n => country_list.insertAdjacentHTML('beforeend', `<li>${n.value.country_name}</li>`));
-        quantity = _res_json.total_rows;
-        get_pagination();
+      let page_num = 1;
+      let limit = 5;
+      let quantity;
+      for(let i of document.querySelectorAll('.quantity_i')){
+        if(i.checked)  limit = i.value;
       }
+        
+       get_list_countries(); 
 
-      function get_pagination(){
+      
+          async function get_list_countries(){
+              let country_list = document.querySelector('#country_list');
+              country_list.innerHTML = '';
+
+              const _res_json = await fetch(`/api/get_countries/${page_num}/${limit}`).then(response => response.json());
+
+              _res_json.rows.map(n => createButton(country_list, n.value.country_name, 'li'));
+              quantity = _res_json.total_rows;
+
+              const funcPrev = () => {
+                page_num --; 
+                get_list_countries();
+              } 
+
+              const funcNext = () => {
+                page_num ++; 
+                get_list_countries();
+              }
+
+              get_pagination('#paginat_system', limit, quantity, page_num, funcPrev, funcNext);
+            }
+
+    })
+
+
+    document.querySelector('#get_satellites_button').addEventListener('click', (e) => {
+      let page_num = 1;
+      let limit = 5;
+      let quantity;
+      for(let i of document.querySelectorAll('.quantity_n')){
+        if(i.checked)  limit = i.value;
+      }
+        
+       get_list_satellites(); 
+
+      
+          async function get_list_satellites(){
+              let satellite_list = document.querySelector('#satellite_list');
+              satellite_list.innerHTML = '';
+
+              const _res_json = await fetch(`/api/get_satellites/${page_num}/${limit}`).then(response => response.json());
+
+              _res_json.rows.map(n => createButton(satellite_list, n.value.satellite_name, 'li'));
+              quantity = _res_json.total_rows;
+
+              const funcPrev = () => {
+                page_num --; 
+                get_list_satellites();
+              } 
+
+              const funcNext = () => {
+                page_num ++; 
+                get_list_satellites();
+              }
+
+              get_pagination('#paginat_system2', limit, quantity, page_num, funcPrev, funcNext);
+            }
+
+    })
+
+
+      function get_pagination(paginate_sys_selector, limit, quantity, page_num, funcPrev, funcNext){
           let last_page = Math.ceil(quantity / limit );
-          let pag_sys = document.querySelector('#paginat_system')
+          let pag_sys = document.querySelector(paginate_sys_selector)
           pag_sys.innerHTML = '';
-          let button_temp = document.createElement('button');
 
           if(quantity > limit && page_num > 1){
-            let butt_prev = pag_sys.appendChild(button_temp);
-            butt_prev.innerHTML = 'Prev';
-            butt_prev.onclick = funcPrev
+            createButton(pag_sys, 'Prev', 'button', funcPrev);
           }
 
           if(quantity > limit && page_num < last_page){
-            let butt_prev = pag_sys.appendChild(button_temp);
-            butt_prev.innerHTML = 'Next';
-            butt_prev.onclick = funcNext;
+            createButton(pag_sys, 'Next', 'button', funcNext);
           }
         }
 
-      function funcPrev(){
-          page_num -= 1;
-          get_list_countries(); 
+      function createButton(par, inner, tag, func){
+          let button = document.createElement(tag);
+          par.appendChild(button);
+          button.innerHTML = inner;
+          button.onclick = func;
         }
 
-
-      function funcNext(){
-          page_num += 1;
-          get_list_countries(); 
-        }
            
     })();
 

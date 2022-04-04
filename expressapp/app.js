@@ -56,6 +56,7 @@ const dbName = 'satellite_db';
 const viewCountryUrl = '_design/satellite_n/_view/country';
 const viewAllData = '_design/satellite_n/_view/all_data';
 const viewByCountry = '_design/satellite_n/_view/by_country';
+const viewBySatellite = '_design/satellite_n/_view/by_satellite';
 
 
 couch.listDatabases()
@@ -68,6 +69,35 @@ app.set('view engine', 'html');
 app.engine('html', require('hbs').__express);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
+
+
+app.get("/api/get_satellites/:page_num/:limit", function(req, res){
+  let page_num = req.params.page_num;
+  let limit = req.params.limit;
+
+
+  const queryOptions = {
+    reduce:false,
+    limit,
+    skip:(page_num-1 )*limit
+  };
+
+      console.log(queryOptions, 'query')
+  couch.get(dbName, viewBySatellite, queryOptions).then(({data, headers, status}) => {
+      console.log(data, 'fullData')
+      console.log(data.rows, 'dataPL')
+      console.log(data.total_rows, 'dataDK')
+      console.log(data.offset, 'dataSO')
+      console.log(typeof data, 'type')
+      res.json(data)
+    },
+    function(err){
+      console.log(err, 'err')
+      res.send(err)
+    }
+  )
+
+});
 
 
 app.get("/api/get_countries/:page_num/:limit", function(req, res){
@@ -83,13 +113,11 @@ app.get("/api/get_countries/:page_num/:limit", function(req, res){
 
       console.log(queryOptions, 'query')
   couch.get(dbName, viewByCountry, queryOptions).then(({data, headers, status}) => {
- // couch.get(dbName, viewCountryUrl, [0,3]).then(({data, headers, status}) => {
       console.log(data, 'fullData')
       console.log(data.rows, 'dataPL')
       console.log(data.total_rows, 'dataDK')
       console.log(data.offset, 'dataSO')
       console.log(typeof data, 'type')
-      //res.render('index', JSON.stringify(data))
       res.json(data)
     },
     function(err){
