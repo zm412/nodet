@@ -135,17 +135,22 @@ app.post('/api/search_item', function(req, res){
   const string_key = req.body.string_key;
   
   console.log(req.body, 'req_body')
-  const mangoQuery =
-    {
-    "selector": { "Actor_name": "Robert De Niro" },
-    "fields": ["Actor_name", "Movie_year", "_id", "_rev"]
+
+  const mangoQuery = {
+   "selector": {
+      "_id": {
+         "$gt": null
+      },
+      "name": {
+         "$regex": '^' + string_key  
+      }
+   }
 }
   //console.log(mangoQuery, 'MANGO')
   couch.mango(dbName, mangoQuery, {}).then(({data, headers, status}) => {
       console.log(data, 'SSSSSSSSSSS')
       res.render('objectsList', {
-        'country_name': data.docs.map(n=>n.sat_country),
-        'satellites': data.docs
+        'satellites': data.docs.length == 0 ? '' : data.docs
       })
     }, err => {
       console.log(err, 'err')
@@ -215,18 +220,12 @@ app.post('/api/satellite', function(req, res){
              }
           }
       
-     
-      let old_data = data;
+      let satellite_data = data;
       couch.get(dbName, country_id).then(({data, headers, status}) => {
         console.log(data, 'doc')
-        let obj = {
-            'country_name': data.name,
-            'satellites': old_data.docs
-          }
-        console.log(obj, 'obj')
           res.render('objectsList', {
             'country_name': data.name,
-            'satellites': old_data.docs
+            'satellites': satellite_data.docs
           })
         }, err => {
           res.send(err)
