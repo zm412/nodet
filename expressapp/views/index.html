@@ -17,6 +17,17 @@
 <div id ='sampleposting'>
 
   <h2 style="text-align: left">Test API responses</h2>
+  <div>
+    <h4>Search item</h4>
+     <form action="/api/search_item" method="post" class="border">
+      <h4>Test post to /api/search_item</h4>
+      <label for="title" >Search</label>
+      <input type="text" name="string_key" value=""><br>
+      <input type="submit" value="Search">
+    </form>
+  </div>
+  <hr>
+
 
   <div>
     <h4>Get countries</h4>
@@ -38,10 +49,22 @@
     <ul id='satellite_list'></ul>
     <div id="paginat_system2"></div>
   </div>
-
+  <hr>
+  <h4>Find country by id /api/country</h4>
+      <form action="/api/country" method="post" class="border">
+        <input type="text" name="country_id"><br>
+        <input type="submit" value="Find info">
+      </form>
+  <hr>
+ 
+  <h4>Find satellite by id /api/satellite</h4>
+      <form action="/api/satellite" method="post" class="border">
+        <input type="text" name="satellite_id"><br>
+        <input type="submit" value="Find info">
+      </form>
   <hr>
   <form action="/api/add_country" method="post" class="border">
-    <h4>Test post to /api/country</h4>
+    <h4>Test post to /api/add_country</h4>
     <label for="title" >Country</label>
     <input type="text" id="title" name="name" value=""><br>
     <input type="submit" value="Add country">
@@ -49,16 +72,10 @@
 
    <ul>
     {{#each countries}}
-      <li>{{value.country_name}}, id: {{this.key}}
+      <li>{{value.name}}, id: {{this.key}}
     {{/each}}
    </ul>
 
-  <hr>
-  <h4>Find country by id /api/country</h4>
-      <form action="/api/country" method="post" class="border">
-        <input type="text" name="country_id"><br>
-        <input type="submit" value="Find info">
-      </form>
 
   <hr>
   <form method="post" action="/api/add_satellite"  class="border">
@@ -66,13 +83,20 @@
     <label for="sat_name">Satellite name</label>
     <input type="text" name="sat_name" value=""><br>
     <label for="country">Country</label>
-      <select id="country" name="country">
+      <select id="country" name="country_id">
       {{#each countries}}
-        <option value="{{value.country_name}}">{{value.country_name}}</option>
+        <option value="{{value._id}}">{{value.name}}</option>
       {{/each}}
       </select>
     <input type="submit" value="Submit">
   </form>
+
+   <ul>
+    {{#each satellites}}
+      <li>{{value.name}}, id: {{this.key}}
+    {{/each}}
+   </ul>
+
 
 <hr style='margin: 50px'>
 <script src="/public/main.js"></script>
@@ -94,10 +118,12 @@
           async function get_list_countries(){
               let country_list = document.querySelector('#country_list');
               country_list.innerHTML = '';
+              let url = '/api/get_countries';
+              let params = { method: 'POST', headers: { "Content-type": "application/json" }, body: JSON.stringify({page_num, limit})};
+              const _res_json = await fetch(url, params).then(response => response.json());
+              console.log(_res_json, 'res')
+              _res_json.rows.map(n => createButton(country_list, n.value.name, 'li'));
 
-              const _res_json = await fetch(`/api/get_countries/${page_num}/${limit}`).then(response => response.json());
-
-              _res_json.rows.map(n => createButton(country_list, n.value.country_name, 'li'));
               quantity = _res_json.total_rows;
 
               const funcPrev = () => {
@@ -126,14 +152,14 @@
         
        get_list_satellites(); 
 
-      
           async function get_list_satellites(){
               let satellite_list = document.querySelector('#satellite_list');
               satellite_list.innerHTML = '';
-
-              const _res_json = await fetch(`/api/get_satellites/${page_num}/${limit}`).then(response => response.json());
-
-              _res_json.rows.map(n => createButton(satellite_list, n.value.satellite_name, 'li'));
+              let url = '/api/get_countries';
+              let params = { method: 'POST', headers: { "Content-type": "application/json" }, body: JSON.stringify({page_num, limit})};
+              const _res_json = await fetch(url, params).then(response => response.json());
+              
+              _res_json.rows.map(n => createButton(satellite_list, n.value.name, 'li'));
               quantity = _res_json.total_rows;
 
               const funcPrev = () => {
@@ -151,6 +177,21 @@
 
     })
 
+
+        async function fetchDataPost(url, obj){  
+          try{
+            let response = await fetch(url, {
+              method: 'POST',
+              headers: { 
+                "Content-type": "application/json"
+              },
+              body: JSON.stringify(obj) 
+            });
+            return await response.json();
+          } catch(e){
+            console.error(e);
+          }
+        }
 
       function get_pagination(paginate_sys_selector, limit, quantity, page_num, funcPrev, funcNext){
           let last_page = Math.ceil(quantity / limit );

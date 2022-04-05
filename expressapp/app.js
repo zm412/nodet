@@ -53,7 +53,6 @@ const couch = new NodeCouchDb({
 })
 
 const dbName = 'satellite_db';
-const viewCountryUrl = '_design/satellite_n/_view/country';
 const viewAllData = '_design/satellite_n/_view/all_data';
 const viewByCountry = '_design/satellite_n/_view/by_country';
 const viewBySatellite = '_design/satellite_n/_view/by_satellite';
@@ -71,69 +70,11 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
 
-app.get("/api/get_satellites/:page_num/:limit", function(req, res){
-  let page_num = req.params.page_num;
-  let limit = req.params.limit;
-
-
-  const queryOptions = {
-    reduce:false,
-    limit,
-    skip:(page_num-1 )*limit
-  };
-
-      console.log(queryOptions, 'query')
-  couch.get(dbName, viewBySatellite, queryOptions).then(({data, headers, status}) => {
-      console.log(data, 'fullData')
-      console.log(data.rows, 'dataPL')
-      console.log(data.total_rows, 'dataDK')
-      console.log(data.offset, 'dataSO')
-      console.log(typeof data, 'type')
-      res.json(data)
-    },
-    function(err){
-      console.log(err, 'err')
-      res.send(err)
-    }
-  )
-
-});
-
-
-app.get("/api/get_countries/:page_num/:limit", function(req, res){
-  let page_num = req.params.page_num;
-  let limit = req.params.limit;
-
-
-  const queryOptions = {
-    reduce:false,
-    limit,
-    skip:(page_num-1 )*limit
-  };
-
-      console.log(queryOptions, 'query')
-  couch.get(dbName, viewByCountry, queryOptions).then(({data, headers, status}) => {
-      console.log(data, 'fullData')
-      console.log(data.rows, 'dataPL')
-      console.log(data.total_rows, 'dataDK')
-      console.log(data.offset, 'dataSO')
-      console.log(typeof data, 'type')
-      res.json(data)
-    },
-    function(err){
-      console.log(err, 'err')
-      res.send(err)
-    }
-  )
-
-});
-
-
 app.get("/", function(req, res){
 
   couch.get(dbName, viewAllData).then(
     function(data, headers, status) {
-      //console.log(data, 'data')
+      //console.log(data.data.rows, 'data')
       res.render('index', {
         'data': data.data.rows,
         'countries': data.data.rows.filter(n => n.value.type == 'country'),
@@ -148,119 +89,207 @@ app.get("/", function(req, res){
 
 });
 
-app.get('/api/country/:id', function(req, res){
-  let id = req.params.id;
-  let name;
- 
-  couch.get(dbName, id).then(
-    function(data, headers, status) {
-      name = data.data.country_name
-    
-    },
-    function(err){
-      console.log(err, 'err')
-    }
-  )
- 
-  couch.get(dbName, viewAllData).then(
-    function(data, headers, status) {
-      //console.log(data.data.rows, 'data')
-      res.render('objectsList', {
-        'country_name': name,
-        'satellites': data.data.rows.filter(n => n.value.sat_country==name)
-      })
+
+app.post("/api/get_satellites", function(req, res){
+  let page_num = req.body.page_num;
+  let limit = req.body.limit;
+
+  const queryOptions = {
+    reduce:false,
+    limit,
+    skip:(page_num-1 )*limit
+  };
+
+  couch.get(dbName, viewBySatellite, queryOptions).then(({data, headers, status}) => {
+      res.json(data)
     },
     function(err){
       console.log(err, 'err')
       res.send(err)
     }
   )
-}
+});
+
+
+app.post("/api/get_countries", function(req, res){
+  let page_num = req.body.page_num;
+  let limit = req.body.limit;
+
+  const queryOptions = {
+    reduce:false,
+    limit,
+    skip:(page_num-1 )*limit
+  };
+
+  couch.get(dbName, viewByCountry, queryOptions).then(({data, headers, status}) => {
+      res.json(data)
+    }, err => {
+      console.log(err, 'err')
+      res.send(err)
+    }
   )
+
+});
+
+app.post('/api/search_item', function(req, res){
+  const string_key = req.body.string_key;
+  
+  console.log(req.body, 'req_body')
+  const mangoQuery =
+    {
+    "selector": { "Actor_name": "Robert De Niro" },
+    "fields": ["Actor_name", "Movie_year", "_id", "_rev"]
+}
+  //console.log(mangoQuery, 'MANGO')
+  couch.mango(dbName, mangoQuery, {}).then(({data, headers, status}) => {
+      console.log(data, 'SSSSSSSSSSS')
+      res.render('objectsList', {
+        'country_name': data.docs.map(n=>n.sat_country),
+        'satellites': data.docs
+      })
+    }, err => {
+      console.log(err, 'err')
+      res.send(err)
+    }
+  )
+ 
+})
 
 app.post('/api/country', function(req, res){
   const id = req.body.country_id;
+  console.log(req.body, 'req_body')
   let name; 
   
-  couch.get(dbName, id).then(
-    function(data, headers, status) {
-      //console.log(data, 'ISDLKJLJ')
-      name = data.data.country_name
-    
-    },
-    function(err){
-      console.log(err, 'err')
-    }
-  )
- 
-  couch.get(dbName, viewAllData).then(
-    function(data, headers, status) {
-      //console.log(data.data.rows, 'data')
-      res.render('objectsList', {
-        'country_name': name,
-        'satellites': data.data.rows.filter(n => n.value.data.sat_country==name)
-      })
-    },
-    function(err){
+  couch.get(dbName, id).then(({data, headers, status}) => {
+      console.log(data, 'KKKKKK')
+      name = data.name;
+      const mangoQuery = {
+       "selector": {
+          "_id": {
+             "$gt": null
+          },
+          "country_id":data._id 
+         }
+      }
+      //console.log(mangoQuery, 'MANGO')
+      couch.mango(dbName, mangoQuery, {}).then(({data, headers, status}) => {
+          //console.log(data, 'PPPP')
+          res.render('objectsList', {
+            'country_name': [name],
+            'satellites': data.docs
+          })
+        }, err => {
+          console.log(err, 'err')
+          res.send(err)
+        }
+      )
+      }, err => {
+        console.log(err, 'err')
+      }
+    )
+
+})
+
+app.post('/api/satellite', function(req, res){
+  const id = req.body.satellite_id;
+  console.log(req.body, 'req_body')
+
+  const mangoQuery = {
+         "selector": {
+            "_id": {
+               "$eq": id 
+            }
+         }
+      }
+  
+  //console.log(mangoQuery, 'MANGO')
+  couch.mango(dbName, mangoQuery, {}).then(({data, headers, status}) => {
+      console.log(data, 'PPPP')
+      let country_id = data.docs[0].country_id;
+     
+      const mangoQuery2 = {
+             "selector": {
+                "_id": {
+                   "$eq": country_id 
+                }
+             }
+          }
+      
+     
+      let old_data = data;
+      couch.get(dbName, country_id).then(({data, headers, status}) => {
+        console.log(data, 'doc')
+        let obj = {
+            'country_name': data.name,
+            'satellites': old_data.docs
+          }
+        console.log(obj, 'obj')
+          res.render('objectsList', {
+            'country_name': data.name,
+            'satellites': old_data.docs
+          })
+        }, err => {
+          res.send(err)
+        });
+
+    }, err => {
       console.log(err, 'err')
       res.send(err)
     }
   )
+      
+
 })
 
 app.post('/api/add_country', function(req, res){
   const name = req.body.name;
-  if(name != ''){
-
+  if(name != false){
     couch.uniqid()
       .then(function(ids){
         const id = ids[0];
         couch.insert(dbName, {
           _id: id,
           type: 'country',
-          country_name: name
+          name: name
         })
-          .then(
-            function(data, headers, status){
-              res.redirect('/');
-            },
-            function(err){
-              res.send(err);
-            },
-          )
+          .then(({data, headers, status}) => {
+            res.redirect('/');
+          }, err => {
+            res.send(err);
+          })
       })
   }else{
+    res.redirect('/');
   }
   
 })
 
 app.post('/api/add_satellite', function(req, res){
   let sat_name = req.body.sat_name;
-  let sat_country = req.body.country;
-
-  couch.uniqid()
-    .then(function(ids){
-      const id = ids[0];
-      couch.insert(dbName ,{
-        _id: id,
-        type: 'satellite',
-        satellite_name: sat_name,
-        sat_country: sat_country
+  let sat_country_id = req.body.country_id;
+ 
+  couch.get(dbName, sat_country_id).then(({data, headers, status}) => {
+      couch.uniqid().then(ids => {
+        const id = ids[0];
+        couch.insert(dbName, {
+          _id: id,
+          type: 'satellite',
+          name: sat_name,
+          country_id: sat_country_id
+        })
+          .then(({data, headers, status}) => {
+              res.redirect('/');
+          }, err => {
+              res.send(err);
+          })
       })
-        .then(
-          function(data, headers, status){
-            res.redirect('/');
-          },
-          function(err){
-            res.send(err);
-          },
-        )
-    })
+  }, err => {
+     res.send(err);
+  })
+
+  
 })
 
 
-app.get('/api/get_list_countries', function(req, res){
-
-})
 
 app.listen(3000);
