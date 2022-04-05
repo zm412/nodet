@@ -101,6 +101,7 @@ app.post("/api/get_satellites", function(req, res){
   };
 
   couch.get(dbName, viewBySatellite, queryOptions).then(({data, headers, status}) => {
+      console.log(data, "satellites")
       res.json(data)
     },
     function(err){
@@ -122,6 +123,7 @@ app.post("/api/get_countries", function(req, res){
   };
 
   couch.get(dbName, viewByCountry, queryOptions).then(({data, headers, status}) => {
+    console.log(data, "countries")
       res.json(data)
     }, err => {
       console.log(err, 'err')

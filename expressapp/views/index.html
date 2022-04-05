@@ -104,94 +104,51 @@
 
   const countries = (() => {
 
-    document.querySelector('#get_countries_button').addEventListener('click', (e) => {
+    function collectedFunc(listSelector, paginatSelector, inputsSelector, url){
       let page_num = 1;
       let limit = 5;
       let quantity;
-      for(let i of document.querySelectorAll('.quantity_i')){
+      for(let i of document.querySelectorAll(inputsSelector)){
         if(i.checked)  limit = i.value;
       }
         
-       get_list_countries(); 
+      get_list_items(); 
+  
+      async function get_list_items(){
 
-      
-          async function get_list_countries(){
-              let country_list = document.querySelector('#country_list');
-              country_list.innerHTML = '';
-              let url = '/api/get_countries';
-              let params = { method: 'POST', headers: { "Content-type": "application/json" }, body: JSON.stringify({page_num, limit})};
-              const _res_json = await fetch(url, params).then(response => response.json());
-              console.log(_res_json, 'res')
-              _res_json.rows.map(n => createButton(country_list, n.value.name, 'li'));
+        let items_list = document.querySelector(listSelector);
+        items_list.innerHTML = '';
+        let params = { method: 'POST', headers: { "Content-type": "application/json" }, body: JSON.stringify({page_num, limit})};
+        const _res_json = await fetch(url, params).then(response => response.json());
+        console.log(_res_json, 'res')
 
-              quantity = _res_json.total_rows;
+        _res_json.rows.map(n => createButton(items_list, n.value.name, 'li'));
+        quantity = _res_json.total_rows;
 
-              const funcPrev = () => {
-                page_num --; 
-                get_list_countries();
-              } 
+        const funcPrev = () => {
+          page_num --; 
+          get_list_items();
+        } 
 
-              const funcNext = () => {
-                page_num ++; 
-                get_list_countries();
-              }
+        const funcNext = () => {
+          page_num ++; 
+          get_list_items();
+        }
 
-              get_pagination('#paginat_system', limit, quantity, page_num, funcPrev, funcNext);
-            }
+          get_pagination(paginatSelector, limit, quantity, page_num, funcPrev, funcNext);
+        }
+    }
 
-    })
+
+
+    document.querySelector('#get_countries_button').addEventListener('click', (e) => {
+        collectedFunc('#country_list', '#paginat_system', '.quantity_i',  '/api/get_countries')
+      })
 
 
     document.querySelector('#get_satellites_button').addEventListener('click', (e) => {
-      let page_num = 1;
-      let limit = 5;
-      let quantity;
-      for(let i of document.querySelectorAll('.quantity_n')){
-        if(i.checked)  limit = i.value;
-      }
-        
-       get_list_satellites(); 
-
-          async function get_list_satellites(){
-              let satellite_list = document.querySelector('#satellite_list');
-              satellite_list.innerHTML = '';
-              let url = '/api/get_countries';
-              let params = { method: 'POST', headers: { "Content-type": "application/json" }, body: JSON.stringify({page_num, limit})};
-              const _res_json = await fetch(url, params).then(response => response.json());
-              
-              _res_json.rows.map(n => createButton(satellite_list, n.value.name, 'li'));
-              quantity = _res_json.total_rows;
-
-              const funcPrev = () => {
-                page_num --; 
-                get_list_satellites();
-              } 
-
-              const funcNext = () => {
-                page_num ++; 
-                get_list_satellites();
-              }
-
-              get_pagination('#paginat_system2', limit, quantity, page_num, funcPrev, funcNext);
-            }
-
+        collectedFunc('#satellite_list', '#paginat_system2', '.quantity_n',  '/api/get_satellites')
     })
-
-
-        async function fetchDataPost(url, obj){  
-          try{
-            let response = await fetch(url, {
-              method: 'POST',
-              headers: { 
-                "Content-type": "application/json"
-              },
-              body: JSON.stringify(obj) 
-            });
-            return await response.json();
-          } catch(e){
-            console.error(e);
-          }
-        }
 
       function get_pagination(paginate_sys_selector, limit, quantity, page_num, funcPrev, funcNext){
           let last_page = Math.ceil(quantity / limit );
