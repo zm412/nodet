@@ -104,10 +104,11 @@
 
   const countries = (() => {
 
-    function collectedFunc(listSelector, paginatSelector, inputsSelector, url){
+    function collectedFunc(listSelector, paginatSelector, inputsSelector, items_type){
       let page_num = 1;
       let limit = 5;
       let quantity;
+
       for(let i of document.querySelectorAll(inputsSelector)){
         if(i.checked)  limit = i.value;
       }
@@ -118,8 +119,8 @@
 
         let items_list = document.querySelector(listSelector);
         items_list.innerHTML = '';
-        let params = { method: 'POST', headers: { "Content-type": "application/json" }, body: JSON.stringify({page_num, limit})};
-        const _res_json = await fetch(url, params).then(response => response.json());
+        let params = { method: 'POST', headers: { "Content-type": "application/json" }, body: JSON.stringify({page_num, limit, items_type})};
+        const _res_json = await fetch('/api/get_items', params).then(response => response.json());
         console.log(_res_json, 'res')
 
         _res_json.rows.map(n => createButton(items_list, n.value.name, 'li'));
@@ -142,12 +143,12 @@
 
 
     document.querySelector('#get_countries_button').addEventListener('click', (e) => {
-        collectedFunc('#country_list', '#paginat_system', '.quantity_i',  '/api/get_countries')
+        collectedFunc('#country_list', '#paginat_system', '.quantity_i',  'country')
       })
 
 
     document.querySelector('#get_satellites_button').addEventListener('click', (e) => {
-        collectedFunc('#satellite_list', '#paginat_system2', '.quantity_n',  '/api/get_satellites')
+        collectedFunc('#satellite_list', '#paginat_system2', '.quantity_n',  'satellite')
     })
 
       function get_pagination(paginate_sys_selector, limit, quantity, page_num, funcPrev, funcNext){
