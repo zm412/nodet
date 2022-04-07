@@ -3,8 +3,8 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const NodeCouchDb = require('node-couchdb');
 const hbs = require('hbs');
-const { graphqlHTTP } = require("express-graphql");
-const schema = require('./schema');
+//const { graphqlHTTP } = require("express-graphql");
+//const schema = require('./schema');
 
 const app = express();
 
@@ -32,6 +32,7 @@ app.use(bodyParser.urlencoded({extended: false}));
 
 
 //------- 
+/*
 
 const root = {
   getAllCountries: async () => {
@@ -56,6 +57,7 @@ app.use('/graphql', graphqlHTTP({
   rootValue: root
 }))
 
+*/
 //-----
 
 app.get("/", function(req, res){
