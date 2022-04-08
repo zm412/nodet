@@ -5,7 +5,6 @@ var schema = BuildSchema(`
         _id: ID
         type: String
         name: String
-        satellites: [Satellite]
     }
     type Satellite {
         id: String
@@ -15,11 +14,10 @@ var schema = BuildSchema(`
     }
 
     input CountryInput {
-        id: ID
-        type: String!
-        name: String!
-        satellites: [SatelliteInput]
+        type: String
+        name: String
     }
+
     input SatelliteInput {
         id: ID
         type: String!
@@ -28,8 +26,12 @@ var schema = BuildSchema(`
     }
 
     type Query {
-      getAllCountries: [Country]
+      getAllItems: [Country]
       getCountry(id: ID): Country
+    }
+
+    type Mutation {
+      createCountry(input: CountryInput): Country
     }
 `);
 

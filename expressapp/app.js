@@ -1,53 +1,86 @@
 const express = require("express");
 const bodyParser = require('body-parser');
 const path = require('path');
-const NodeCouchDb = require('node-couchdb');
+//const NodeCouchDb = require('node-couchdb');
+var cors = require('cors');
 const hbs = require('hbs');
-//const { graphqlHTTP } = require("express-graphql");
-//const schema = require('./schema');
+var nano = require('nano')('http://admin:4455@db:5984');
+//var nano = require('nano')('http://admin:4455@localhost:9100');
+var satellite_db = nano.use('satellite_db');
+const { graphqlHTTP } = require("express-graphql");
+const schema = require('./schema');
 
 const app = express();
 
-const couch = new NodeCouchDb({
-  auth: {
-    user: 'admin',
-    password: '4455'
-  }
-})
+//-------
 
-const dbName = 'satellite_db';
-const viewAllData = '_design/satellite_n/_view/all_data';
-const viewByCountry = '_design/satellite_n/_view/by_country';
-const viewBySatellite = '_design/satellite_n/_view/by_satellite';
+const temp = async () => {
+  const dblist = await nano.db.list()
+  //const doclist = await satellite_db.view("", '_all_docs')
+  console.log(dblist, 'dblist')
+  const doclist = await satellite_db.list({include_docs: true})
+  console.log(doclist.rows, 'dockist')
+  console.log(doclist.rows.map(n => n.doc), 'dockist1')
 
-couch.listDatabases()
-  .then((dbs) => {
-    console.log(dbs)
-  })
+  /*
+  const response = await satellite_db.insert({
+  "views": {
+    "country": {
+      "map": "function (doc) {\n  if(doc.type == 'country')  emit(doc._id, doc);\n}"
+    },
+    "satellite": {
+      "map": "function (doc) {\n  if(doc.type == 'satellite')  emit(doc._id, 1);\n}"
+    },
+    "all_data": {
+      "map": "function (doc) {\n   emit(doc._id, doc);\n}"
+    },
+    "by_country": {
+      "map": "function (doc) {\n  if(doc.type == 'country')  emit(doc._id, doc);\n}"
+    },
+    "by_satellite": {
+      "map": "function (doc) {\n  if(doc.type == 'satellite')  emit(doc._id, doc);\n}"
+    }
 
-app.set('view engine', 'html');
-app.engine('html', require('hbs').__express);
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: false}));
+  }})
+  */
+  //const doclist = await satellite_db.list().then((body) => console.log(body.rows[0].value, 'body'))
+  
+  //await nano.db.destroy('_users')
+  //await nano.db.create('_users')
 
+  //const info = await nano.db.get('satellite_db')
+  //console.log(info, 'info')
+}
 
-//------- 
-/*
+temp()
+
+const createCountry = (input) => {
+  let type = "country";
+  return {type, ...input}
+}
 
 const root = {
-  getAllCountries: async () => {
-    let answ;
-    await couch.get(dbName, viewByCountry).then((data, headers, status) => {
-        answ = data.data.rows.map(n => n.value)
-      },err => {
-        answ =  err
-      }
-    )
-    return answ;
+
+  getAllItems: async () => {
+    const doclist = await satellite_db.list({include_docs: true})
+    //const doclist = await satellite_db.view("_design/satellite_n", 'by_country')
+    
+    console.log(doclist, 'doclist2')
+    return [ {name: 'lll', type: 'lkjlj'} ] 
   },
+
   getCountry:({id}) => {
     return null;
+  },
+
+  createCountry: async({input}) => {
+    let obj = createCountry(input) 
+    const response = await satellite_db.insert(obj)
+    return response;
+    console.log(input, 'input')
+    console.log(response.id, 'response')
   }
+
 }
 
 
@@ -57,10 +90,50 @@ app.use('/graphql', graphqlHTTP({
   rootValue: root
 }))
 
-*/
 //-----
 
+/*
+const couch = new NodeCouchDb({
+  host: 'db',
+  host: 'admin:4455@db:',
+  protocol: 'https',
+  port: 9100 
+})
+const couch = new NodeCouchDb({
+  auth: {
+    user: 'admin',
+    password: '4455'
+  }
+})
+*/
+let couch;
+
+const dbName = 'satellite_db';
+const viewAllData = '_design/satellite_n/_view/all_data';
+const viewByCountry = '_design/satellite_n/_view/by_country';
+const viewBySatellite = '_design/satellite_n/_view/by_satellite';
+app.use(cors())
+/*
+couch.listDatabases()
+  .then((dbs) => {
+    console.log(dbs)
+  })
+
+*/
+app.set('view engine', 'html');
+app.engine('html', require('hbs').__express);
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: false}));
+
 app.get("/", function(req, res){
+  //posts.insert({name:"Altynay"}).then((data) => {
+   // console.log(data, 'DATAAAA')
+//}).catch((err) => {
+    //console.log(err, 'ERRRR')
+  // failure - error information is in 'err'
+//})
+
+  /*
 
   couch.get(dbName, viewAllData).then((data, headers, status) => {
       res.render('index', {
@@ -72,6 +145,10 @@ app.get("/", function(req, res){
       res.send(err)
     }
   )
+  */
+
+  res.render('index')
+
 });
 
 app.post("/api/get_items", (req, res) => {
@@ -254,4 +331,4 @@ app.post('/api/add_satellite', function(req, res){
 
 
 
-app.listen(3000);
+app.listen(5000);

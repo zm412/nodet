@@ -1,0 +1,26 @@
+version: '3.9'
+services:
+  db:
+    image: couchdb:latest 
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=4455
+    restart: always
+    volumes:
+        - ./dbdata:/opt/couchdb/data
+        - /var/lib/couchdb/:/var/lib/couchdb/
+  nodeapp:
+    restart: always
+    build:
+      context: ./expressapp/
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    stdin_open: true
+    command: npm run start 
+    volumes:
+      - ./expressapp:/code/
+      #- /code/node_modules
+    depends_on:
+      - db
+ 

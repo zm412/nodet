@@ -12,6 +12,8 @@
 *.swi
 *.swj
 *package-lock.json
+/dbdata
+/var
 
 # Runtime data
 pids
