@@ -73,7 +73,13 @@
 
    <ul>
     {{#each countries}}
-      <li>{{name}}, id: {{this._id}}
+      <li>
+        <form action="/api/delete_item/" method="post">
+          {{name}}, id: {{this._id}}
+          <input type="hidden" value="{{this._id}}" name="id">
+          <input type="hidden" value="{{this._rev}}" name="rev">
+          <input type="submit" value="Delete">
+        </form>
     {{/each}}
    </ul>
 
@@ -86,7 +92,7 @@
     <label for="country">Country</label>
       <select id="country" name="country_id">
       {{#each countries}}
-        <option value="{{value._id}}">{{value.name}}</option>
+        <option value="{{_id}}">{{name}}</option>
       {{/each}}
       </select>
     <input type="submit" value="Submit">
@@ -94,7 +100,15 @@
 
    <ul>
     {{#each satellites}}
-      <li>{{value.name}}, id: {{this.key}}
+      <li>
+        <form action="/api/delete_item/" method="post">
+          {{name}}, id: {{this._id}}
+          <input type="hidden" value="{{this._id}}" name="id">
+          <input type="hidden" value="{{this._rev}}" name="rev">
+          <input type="submit" value="Delete">
+        </form>
+      </li>
+
     {{/each}}
    </ul>
 

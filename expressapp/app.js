@@ -1,11 +1,9 @@
 const express = require("express");
 const bodyParser = require('body-parser');
 const path = require('path');
-//const NodeCouchDb = require('node-couchdb');
 var cors = require('cors');
 const hbs = require('hbs');
 var nano = require('nano')('http://admin:4455@db:5984');
-//var nano = require('nano')('http://admin:4455@localhost:9100');
 var satellite_db = nano.use('satellite_db');
 const { graphqlHTTP } = require("express-graphql");
 const schema = require('./schema');
@@ -13,77 +11,14 @@ const schema = require('./schema');
 const app = express();
 app.use(express.static(__dirname + '/public'));
 
-//-------
-
 const temp = async () => {
-  //const response = await satellite_db.destroy('_design/satellite_n', '1-e37ce87801e5b92e6784094dadee0835')
-  /*
- satellite_db.insert(
-  { "views": 
-    {  "by_country": 
-      { "map": "function (doc) {\n  if(doc.type == 'country')  emit(doc._id, doc);\n}" },
-    }   
-  }, '_design/satellite_n', function (error, response) {
-    console.log("yay");
-  });
-
-*/
-  /*
-   satellite_db.insert(
-  { "views": 
-    { "satellite": 
-      {  "map": "function (doc) {\n  if(doc.type == 'satellite')  emit(doc._id, 1);\n}" } 
-    }
-  }, '_design/satellite_n', function (error, response) {
-    console.log("yay");
-  });
-  */
   const dblist = await nano.db.list()
-  //const doclist = await satellite_db.view("", '_all_docs')
   const doclist = await satellite_db.list({include_docs: true})
-  console.log(doclist.rows, 'ALLLLL')
-/*
-  satellite_db.insert({
-  "views": {
-    "by_country": {
-      "map": "function (doc) {\n  if(doc.type == 'country')  emit(doc._id, doc);\n}"
-    },
-    "by_satellite": {
-      "map": "function (doc) {\n  if(doc.type == 'satellite')  emit(doc._id, doc);\n}"
-    }
-  }},"_design/satellite_n", function (error, response) {
-    console.log("yay");
-  }
-
-  )
-  */
-  //const doclist = await satellite_db.list().then((body) => console.log(body.rows[0].value, 'body'))
-  
-  //await nano.db.destroy('_users')
-  //await nano.db.create('_users')
-
-  //const info = await nano.db.get('satellite_db')
-  //console.log(info, 'info')
+  //console.log(doclist.rows.map(n=>n.doc), 'ALLLLL')
 }
-
 
 temp()
 
-const createCountry = (input) => {
-  let type = "country";
-  return {type, ...input}
-}
-
-async function getAllItems(){
-    const q = {
-      selector: {
-        type: { $gt: null }
-      },
-    };
-
-    const doclist = await satellite_db.find(q)
-    return doclist.docs
-}
 
 const root = {
 
@@ -93,22 +28,75 @@ const root = {
         type: { $gt: null }
       },
     };
-
-    const doclist = await satellite_db.find(q)
-    
-    return doclist.docs
+    const doclist = await satellite_db.find(q);
+    return doclist.docs;
   },
 
-  getCountry:({id}) => {
-    return null;
+  getCountry: async(id) => {
+    const doc = await satellite_db.get(id, {include_docs: true});
+    if(doc.type == 'country'){
+      name = doc.name;
+      const q = {
+        selector: {
+          "country_id": doc._id
+        },
+      };
+      const doclist = await satellite_db.find(q);
+      return { 'country_name': [name], 'satellites': doclist.docs };
+    }
   },
 
-  createCountry: async({input}) => {
-    let obj = createCountry(input) 
-    const response = await satellite_db.insert(obj)
-    return response;
-    console.log(input, 'input')
-    console.log(response.id, 'response')
+  getSatellite: async(id) => {
+    const doc = await satellite_db.get(id, {include_docs: true});
+      if(doc.type == 'satellite'){
+          const q = {
+            selector: {
+              _id : doc.country_id 
+            },
+          };
+
+         const country = await satellite_db.get(doc.country_id, {include_docs: true});
+         return { 'country_name': [country.name], 'satellites': [doc] };
+      }
+  },
+
+  getItemsByPages: async(page_num, limit_num, viewFamilyName, viewName) => {
+    const queryOptions = {
+      reduce:false,
+      limit: limit_num,
+      skip:(page_num-1 )*limit_num,
+      include_docs: true
+    };
+
+    const doclist = await satellite_db.view( viewFamilyName, viewName, queryOptions);
+    return doclist;
+  },
+
+  searchItemByName: async(str) => {
+    const q = {
+       "selector": {
+          "_id": { "$gt": null },
+          "name": { "$regex": '^' + str  }
+         }
+      }
+
+    const doclist = await satellite_db.find(q);
+    return {'satellites': doclist.docs.length == 0 ? '' : doclist.docs };
+  },
+
+  createCountry: async(name) => {
+    let data = { type: 'country', name };
+    const doc = await satellite_db.insert(data);
+    return doc;
+ },
+
+  createSatellite: async(name, country_id) => {
+    let data = { type: 'satellite', name: name, country_id: country_id };
+    return await satellite_db.insert(data);
+  },
+
+  deleteItem: async(id, rev) => {
+    return await satellite_db.destroy(id, rev, (res)=> console.log(res));
   }
 
 }
@@ -120,61 +108,24 @@ app.use('/graphql', graphqlHTTP({
   rootValue: root
 }))
 
-//-----
-
-/*
-const couch = new NodeCouchDb({
-  host: 'db',
-  host: 'admin:4455@db:',
-  protocol: 'https',
-  port: 9100 
-})
-const couch = new NodeCouchDb({
-  auth: {
-    user: 'admin',
-    password: '4455'
-  }
-})
-*/
-let couch;
-
-const dbName = 'satellite_db';
-const viewAllData = '_design/satellite_n/_view/all_data';
-const viewByCountry = '_design/satellite_n/_view/by_country';
-const viewBySatellite = '_design/satellite_n/_view/by_satellite';
 app.use(cors())
-/*
-couch.listDatabases()
-  .then((dbs) => {
-    console.log(dbs)
-  })
 
-*/
 app.set('view engine', 'html');
 app.engine('html', require('hbs').__express);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
 app.get("/", async function(req, res){
-  try{
-    const q = {
-      selector: {
-        type: { $gt: null }
-      },
-    };
-
-    const doclist = await satellite_db.find(q)
-
+  
+  root.getAllItems().then(doclist => {
+    console.log(doclist, 'dockist')
     res.render('index', {
-      'data': doclist.docs,
-      'countries': doclist.docs.filter(n => n.type == 'country'),
-      'satellites': doclist.docs.filter(n => n.type == 'satellite'),
+      'data': doclist,
+      'countries': doclist.filter(n => n.type == 'country'),
+      'satellites': doclist.filter(n => n.type == 'satellite'),
     })
-
-  }catch(err) {
-    res.send(err)
-  }
-
+  }).catch(err => res.send(err))
+    
 });
 
 app.post("/api/get_items", async(req, res) => {
@@ -182,153 +133,76 @@ app.post("/api/get_items", async(req, res) => {
   let limit = req.body.limit;
   let type = req.body.items_type;
   let view = 'by_'+type;
-  console.log(view, 'view')
-  console.log(req.body, 'relkjlkljkjk')
+
   if(page_num && limit && type){
+    root.getItemsByPages(page_num, limit, 'satellite_n', 'by_'+type).then(doc => {
+      console.log(doc, 'doc')
+      res.json(doc);
+    }).catch(err =>{
+      res.send(err);
+    })
+  }else{
+    res.redirect('/');
+  }
+});
 
-      try{
-        const queryOptions = {
-          reduce:false,
-          limit,
-          skip:(page_num-1 )*limit,
-          include_docs: true
-        };
-      
-//        const body = await alice.view('characters', 'happy_ones', { key: 'Tea Party', include_docs: true })
+app.post('/api/search_item', async function(req, res){
+  const string_key = req.body.string_key;
+  console.log(string_key, 'lkjlj')
+  if (string_key){
 
-          const doclist = await satellite_db.view('satellite_n', 'by_'+type, queryOptions)
-          console.log(doclist, 'dockist')
-          res.json(doclist);
-
-        }catch(err) {
-          res.send(err)
-        }
+    root.searchItemByName(string_key).then(doc => {
+      res.render('objectsList', doc);
+    }).catch(err => {
+      res.send(err)
+    })
 
   }else{
     res.redirect('/');
   }
-  
-});
-
-app.post('/api/search_item', function(req, res){
-  const string_key = req.body.string_key;
-  if (string_key){
-      const mangoQuery = {
-       "selector": {
-          "_id": {
-             "$gt": null
-          },
-          "name": {
-             "$regex": '^' + string_key  
-          }
-         }
-      }
-      couch.mango(dbName, mangoQuery, {}).then(({data, headers, status}) => {
-          res.render('objectsList', {
-            'satellites': data.docs.length == 0 ? '' : data.docs
-          })
-        }, err => {
-          console.log(err, 'err')
-          res.send(err)
-        }
-      )
-  }else{
-      res.redirect('/');
-  }
 })
 
-app.post('/api/country', function(req, res){
+app.post('/api/country', async function(req, res){
   const id = req.body.country_id;
   let name; 
+
   if(id){
-      couch.get(dbName, id).then(({data, headers, status}) => {
-          name = data.name;
-          const mangoQuery = {
-           "selector": {
-              "_id": {
-                 "$gt": null
-              },
-              "country_id":data._id 
-             }
-          }
-          couch.mango(dbName, mangoQuery, {}).then(({data, headers, status}) => {
-              res.render('objectsList', {
-                'country_name': [name],
-                'satellites': data.docs
-              })
-            }, err => {
-              console.log(err, 'err')
-              res.send(err)
-            }
-          )
-          }, err => {
-            console.log(err, 'err')
-          }
-        )
+    root.getCountry(id)
+      .then(doc => {
+        res.render('objectsList', doc);
+      }).catch(err => {
+        res.send(err)
+    })
   }else{
-      res.redirect('/');
+    res.redirect('/');
   }
 })
 
-app.post('/api/satellite', function(req, res){
+app.post('/api/satellite', async function(req, res){
   const id = req.body.satellite_id;
   if(id){
-      const mangoQuery = {
-             "selector": {
-                "_id": {
-                   "$eq": id 
-                }
-             }
-          }
-      
-      couch.mango(dbName, mangoQuery, {}).then(({data, headers, status}) => {
-          console.log(data, 'PPPP')
-          let country_id = data.docs[0].country_id;
-         
-          const mangoQuery2 = {
-                 "selector": {
-                    "_id": {
-                       "$eq": country_id 
-                    }
-                 }
-              }
-          
-          let satellite_data = data;
-          couch.get(dbName, country_id).then(({data, headers, status}) => {
-              res.render('objectsList', {
-                'country_name': data.name,
-                'satellites': satellite_data.docs
-              })
-            }, err => {
-              res.send(err)
-            });
 
-        }, err => {
-          console.log(err, 'err')
-          res.send(err)
-        }
-      )
+    root.getSatellite(id).then(doc => {
+      res.render('objectsList', doc)
+
+    }).catch(err => res.send(err))
+
+  }else{
+    res.redirect('/');
   }
 })
 
 
 //-----
-app.post('/api/add_country', function(req, res){
+
+app.post('/api/add_country', async function(req, res){
   const name = req.body.name;
+  console.log(req.body, 'REQ')
   if(name != false){
-    couch.uniqid()
-      .then(function(ids){
-        const id = ids[0];
-        couch.insert(dbName, {
-          _id: id,
-          type: 'country',
-          name: name
-        })
-          .then(({data, headers, status}) => {
-            res.redirect('/');
-          }, err => {
-            res.send(err);
-          })
+    root.createCountry(name).then(doc => {
+        res.redirect('/');
+    }).catch(err => {
+        res.send(err)
       })
   }else{
     res.redirect('/');
@@ -336,29 +210,29 @@ app.post('/api/add_country', function(req, res){
   
 })
 
-app.post('/api/add_satellite', function(req, res){
+app.post('/api/add_satellite', async function(req, res){
   let sat_name = req.body.sat_name;
   let sat_country_id = req.body.country_id;
- 
-  couch.get(dbName, sat_country_id).then(({data, headers, status}) => {
-      couch.uniqid().then(ids => {
-        const id = ids[0];
-        couch.insert(dbName, {
-          _id: id,
-          type: 'satellite',
-          name: sat_name,
-          country_id: sat_country_id
-        })
-          .then(({data, headers, status}) => {
-              res.redirect('/');
-          }, err => {
-              res.send(err);
-          })
+   if(sat_name != false){
+     root.createSatellite(sat_name, sat_country_id).then(doc => {
+        res.redirect('/');
+     }).catch(err => {
+        res.send(err)
       })
-  }, err => {
-     res.send(err);
-  })
+  }else{
+    res.redirect('/');
+  }
+
 })
+
+app.post('/api/delete_item/', async (req, res) => {
+  const id = req.body.id;
+  const rev = req.body.rev;
+  root.deleteItem(id, rev);
+  res.redirect('/');
+})
+
+
 //-----
 
 
