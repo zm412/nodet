@@ -3,7 +3,7 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="/public/style.css">
+  <link rel="stylesheet" type="text/css" href="/style.css">
 
   <style>
     code {
@@ -73,7 +73,7 @@
 
    <ul>
     {{#each countries}}
-      <li>{{value.name}}, id: {{this.key}}
+      <li>{{name}}, id: {{this._id}}
     {{/each}}
    </ul>
 
@@ -100,8 +100,8 @@
 
 
 <hr style='margin: 50px'>
-<script src="/public/main.js"></script>
-<script>
+<script type="module" src="/main.js"></script>
+  <script type="module">
 
   const countries = (() => {
 
@@ -124,7 +124,7 @@
         const _res_json = await fetch('/api/get_items', params).then(response => response.json());
         console.log(_res_json, 'res')
 
-        _res_json.rows.map(n => createButton(items_list, n.value.name, 'li'));
+        _res_json.rows.map(n => createButton(items_list, n.doc.name, 'li'));
         quantity = _res_json.total_rows;
 
         const funcPrev = () => {

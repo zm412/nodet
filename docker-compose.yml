@@ -20,7 +20,7 @@ services:
     command: npm run start 
     volumes:
       - ./expressapp:/code/
-      #- /code/node_modules
+      - /code/node_modules
     depends_on:
       - db
  

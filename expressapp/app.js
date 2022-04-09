@@ -11,37 +11,51 @@ const { graphqlHTTP } = require("express-graphql");
 const schema = require('./schema');
 
 const app = express();
+app.use(express.static(__dirname + '/public'));
 
 //-------
 
 const temp = async () => {
+  //const response = await satellite_db.destroy('_design/satellite_n', '1-e37ce87801e5b92e6784094dadee0835')
+  /*
+ satellite_db.insert(
+  { "views": 
+    {  "by_country": 
+      { "map": "function (doc) {\n  if(doc.type == 'country')  emit(doc._id, doc);\n}" },
+    }   
+  }, '_design/satellite_n', function (error, response) {
+    console.log("yay");
+  });
+
+*/
+  /*
+   satellite_db.insert(
+  { "views": 
+    { "satellite": 
+      {  "map": "function (doc) {\n  if(doc.type == 'satellite')  emit(doc._id, 1);\n}" } 
+    }
+  }, '_design/satellite_n', function (error, response) {
+    console.log("yay");
+  });
+  */
   const dblist = await nano.db.list()
   //const doclist = await satellite_db.view("", '_all_docs')
-  console.log(dblist, 'dblist')
   const doclist = await satellite_db.list({include_docs: true})
-  console.log(doclist.rows, 'dockist')
-  console.log(doclist.rows.map(n => n.doc), 'dockist1')
-
-  /*
-  const response = await satellite_db.insert({
+  console.log(doclist.rows, 'ALLLLL')
+/*
+  satellite_db.insert({
   "views": {
-    "country": {
-      "map": "function (doc) {\n  if(doc.type == 'country')  emit(doc._id, doc);\n}"
-    },
-    "satellite": {
-      "map": "function (doc) {\n  if(doc.type == 'satellite')  emit(doc._id, 1);\n}"
-    },
-    "all_data": {
-      "map": "function (doc) {\n   emit(doc._id, doc);\n}"
-    },
     "by_country": {
       "map": "function (doc) {\n  if(doc.type == 'country')  emit(doc._id, doc);\n}"
     },
     "by_satellite": {
       "map": "function (doc) {\n  if(doc.type == 'satellite')  emit(doc._id, doc);\n}"
     }
+  }},"_design/satellite_n", function (error, response) {
+    console.log("yay");
+  }
 
-  }})
+  )
   */
   //const doclist = await satellite_db.list().then((body) => console.log(body.rows[0].value, 'body'))
   
@@ -52,6 +66,7 @@ const temp = async () => {
   //console.log(info, 'info')
 }
 
+
 temp()
 
 const createCountry = (input) => {
@@ -59,14 +74,29 @@ const createCountry = (input) => {
   return {type, ...input}
 }
 
+async function getAllItems(){
+    const q = {
+      selector: {
+        type: { $gt: null }
+      },
+    };
+
+    const doclist = await satellite_db.find(q)
+    return doclist.docs
+}
+
 const root = {
 
   getAllItems: async () => {
-    const doclist = await satellite_db.list({include_docs: true})
-    //const doclist = await satellite_db.view("_design/satellite_n", 'by_country')
+    const q = {
+      selector: {
+        type: { $gt: null }
+      },
+    };
+
+    const doclist = await satellite_db.find(q)
     
-    console.log(doclist, 'doclist2')
-    return [ {name: 'lll', type: 'lkjlj'} ] 
+    return doclist.docs
   },
 
   getCountry:({id}) => {
@@ -125,53 +155,55 @@ app.engine('html', require('hbs').__express);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
-app.get("/", function(req, res){
-  //posts.insert({name:"Altynay"}).then((data) => {
-   // console.log(data, 'DATAAAA')
-//}).catch((err) => {
-    //console.log(err, 'ERRRR')
-  // failure - error information is in 'err'
-//})
+app.get("/", async function(req, res){
+  try{
+    const q = {
+      selector: {
+        type: { $gt: null }
+      },
+    };
 
-  /*
+    const doclist = await satellite_db.find(q)
 
-  couch.get(dbName, viewAllData).then((data, headers, status) => {
-      res.render('index', {
-        'data': data.data.rows,
-        'countries': data.data.rows.filter(n => n.value.type == 'country'),
-        'satellites': data.data.rows.filter(n => n.value.type == 'satellite'),
-      })
-    },err => {
-      res.send(err)
-    }
-  )
-  */
+    res.render('index', {
+      'data': doclist.docs,
+      'countries': doclist.docs.filter(n => n.type == 'country'),
+      'satellites': doclist.docs.filter(n => n.type == 'satellite'),
+    })
 
-  res.render('index')
+  }catch(err) {
+    res.send(err)
+  }
 
 });
 
-app.post("/api/get_items", (req, res) => {
+app.post("/api/get_items", async(req, res) => {
   let page_num = req.body.page_num;
   let limit = req.body.limit;
   let type = req.body.items_type;
+  let view = 'by_'+type;
+  console.log(view, 'view')
+  console.log(req.body, 'relkjlkljkjk')
   if(page_num && limit && type){
-      let view = type == 'country' ? viewByCountry : type == 'satellite' ? viewBySatellite : false; 
 
-      const queryOptions = {
-        reduce:false,
-        limit,
-        skip:(page_num-1 )*limit
-      };
+      try{
+        const queryOptions = {
+          reduce:false,
+          limit,
+          skip:(page_num-1 )*limit,
+          include_docs: true
+        };
+      
+//        const body = await alice.view('characters', 'happy_ones', { key: 'Tea Party', include_docs: true })
 
-      couch.get(dbName, view, queryOptions).then(({data, headers, status}) => {
-        console.log(data, "countries")
-          res.json(data)
-        }, err => {
-          console.log(err, 'err')
+          const doclist = await satellite_db.view('satellite_n', 'by_'+type, queryOptions)
+          console.log(doclist, 'dockist')
+          res.json(doclist);
+
+        }catch(err) {
           res.send(err)
         }
-      )
+
   }else{
     res.redirect('/');
   }
