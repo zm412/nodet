@@ -14,7 +14,16 @@
 <header>
 </header>
 
-    <h4> Страна: {{ country_name }} </h4>
+    <h4>{{ country_name }} </h4>
+    <h4 style="{color: red;}">{{ message }} </h4>
+    <h4 style="{color: red;}">{{ err }} </h4>
+
+   <ul>
+    {{#each items}}
+    <li>{{name}}</li>
+    {{/each}}
+   </ul>
+
 
    <ul>
     {{#each satellites}}

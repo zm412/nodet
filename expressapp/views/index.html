@@ -52,15 +52,17 @@
   </div>
   <hr>
   <h4>Find country by id /api/country</h4>
-      <form action="/api/country" method="post" class="border">
-        <input type="text" name="country_id"><br>
+      <form action="/api/get_by_id" method="post" class="border">
+        <input type="text" name="id"><br>
+        <input type="hidden" name="type" value="country">
         <input type="submit" value="Find info">
       </form>
   <hr>
  
   <h4>Find satellite by id /api/satellite</h4>
-      <form action="/api/satellite" method="post" class="border">
-        <input type="text" name="satellite_id"><br>
+      <form action="/api/get_by_id" method="post" class="border">
+        <input type="text" name="id"><br>
+        <input type="hidden" name="type" value="satellite">
         <input type="submit" value="Find info">
       </form>
   <hr>

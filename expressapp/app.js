@@ -80,8 +80,7 @@ const root = {
          }
       }
 
-    const doclist = await satellite_db.find(q);
-    return {'satellites': doclist.docs.length == 0 ? '' : doclist.docs };
+    return await satellite_db.find(q);
   },
 
   createCountry: async(name) => {
@@ -118,7 +117,6 @@ app.use(bodyParser.urlencoded({extended: false}));
 app.get("/", async function(req, res){
   
   root.getAllItems().then(doclist => {
-    console.log(doclist, 'dockist')
     res.render('index', {
       'data': doclist,
       'countries': doclist.filter(n => n.type == 'country'),
@@ -148,57 +146,43 @@ app.post("/api/get_items", async(req, res) => {
 
 app.post('/api/search_item', async function(req, res){
   const string_key = req.body.string_key;
-  console.log(string_key, 'lkjlj')
   if (string_key){
 
     root.searchItemByName(string_key).then(doc => {
-      res.render('objectsList', doc);
+      let obj = doc.docs.length > 0 ? {items: doc.docs} : { message: 'No results found' }
+      res.render('objectsList', obj);
     }).catch(err => {
       res.send(err)
     })
 
   }else{
-    res.redirect('/');
+    res.render('objectsList', {message: 'No result found'})
   }
 })
 
-app.post('/api/country', async function(req, res){
-  const id = req.body.country_id;
-  let name; 
-
+app.post('/api/get_by_id', async function(req, res){
+  const id = req.body.id;
+  const type = req.body.type;
+  let func = type == 'country' ? 'getCountry' : 'getSatellite';
+  
   if(id){
-    root.getCountry(id)
-      .then(doc => {
-        res.render('objectsList', doc);
+    root[func](id).then(doc => {
+        res.render('objectsList', doc ? doc : { message: `There are no items in this category (${type}) with this id` });
       }).catch(err => {
-        res.send(err)
+        res.render('objectsList', {err})
     })
   }else{
-    res.redirect('/');
+    res.render('objectsList', {message: 'No result found'})
   }
 })
-
-app.post('/api/satellite', async function(req, res){
-  const id = req.body.satellite_id;
-  if(id){
-
-    root.getSatellite(id).then(doc => {
-      res.render('objectsList', doc)
-
-    }).catch(err => res.send(err))
-
-  }else{
-    res.redirect('/');
-  }
-})
-
 
 //-----
 
 app.post('/api/add_country', async function(req, res){
+
+  let regexOne = /^([a-zA-Zа-яёА-ЯЁ]|\-)+$/;
   const name = req.body.name;
-  console.log(req.body, 'REQ')
-  if(name != false){
+  if(regexOne.test(name)){
     root.createCountry(name).then(doc => {
         res.redirect('/');
     }).catch(err => {
