@@ -7,6 +7,8 @@ var nano = require('nano')('http://admin:4455@db:5984');
 var satellite_db = nano.use('satellite_db');
 const { graphqlHTTP } = require("express-graphql");
 const schema = require('./schema');
+const fs=require("fs")
+
 
 const app = express();
 app.use(express.static(__dirname + '/public'));
@@ -28,8 +30,19 @@ const root = {
         type: { $gt: null }
       },
     };
-    const doclist = await satellite_db.find(q);
-    return doclist.docs;
+    const doclist = await satellite_db.list({include_docs: true});
+    //const doclist = await satellite_db.find(q);
+    /*
+    fs.writeFile("json_data.txt", JSON.stringify( doclist ), function(error){
+
+    let data = fs.readFileSync("txt.txt", "utf8");
+    console.log(data);  // выводим считанные данные
+    });
+    */
+
+    console.log(doclist.rows.map(n=>n.doc), 'DDDDDDDDDDdd')
+    //console.log(doclist, "DDDDDDddd")
+    return doclist.rows.map(n=>n.doc);
   },
 
   getCountry: async(id) => {
@@ -117,6 +130,7 @@ app.use(bodyParser.urlencoded({extended: false}));
 app.get("/", async function(req, res){
   
   root.getAllItems().then(doclist => {
+    console.log(doclist, 'doclist')
     res.render('index', {
       'data': doclist,
       'countries': doclist.filter(n => n.type == 'country'),
@@ -180,8 +194,8 @@ app.post('/api/get_by_id', async function(req, res){
 
 app.post('/api/add_country', async function(req, res){
 
-  let regexOne = /^([a-zA-Zа-яёА-ЯЁ]|\-)+$/;
-  const name = req.body.name;
+  let regexOne = /^([a-zA-Zа-яёА-ЯЁ])+|([a-zA-Zа-яёА-ЯЁ\-]){3,}| ([a-zA-Zа-яёА-ЯЁ\-]){3,}$/;
+  const name = req.body.name.trim();
   if(regexOne.test(name)){
     root.createCountry(name).then(doc => {
         res.redirect('/');

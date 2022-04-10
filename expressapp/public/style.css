@@ -16,6 +16,10 @@
   margin-left: 5%;
 }
 
+.hidden_block {
+  display: none;
+}
+
 li {
   text-align: left;
 }

@@ -66,14 +66,31 @@
         <input type="submit" value="Find info">
       </form>
   <hr>
+  <h4>Test post to /api/add_country</h4>
   <form action="/api/add_country" method="post" class="border">
-    <h4>Test post to /api/add_country</h4>
     <label for="title" >Country</label>
     <input type="text" id="title" name="name" value=""><br>
     <input type="submit" value="Add country">
   </form>
 
-   <ul>
+  <hr>
+  <h4>Test post to /api/add_satellite</h4>
+  <form method="post" action="/api/add_satellite"  class="border">
+    <label for="sat_name">Satellite name</label>
+    <input type="text" name="sat_name" value=""><br>
+    <label for="country">Country</label>
+      <select id="country" name="country_id">
+      {{#each countries}}
+        <option value="{{_id}}">{{name}}</option>
+      {{/each}}
+      </select>
+    <input type="submit" value="Submit">
+  </form>
+
+  <hr>
+  <h4>Open List of countries</h4>
+  <button id='close_list_c'>Open list</button>
+   <ul id='country_l' class='hidden_block'>
     {{#each countries}}
       <li>
         <form action="/api/delete_item/" method="post">
@@ -87,20 +104,9 @@
 
 
   <hr>
-  <form method="post" action="/api/add_satellite"  class="border">
-    <h4>Test post to /api/add_satellite</h4>
-    <label for="sat_name">Satellite name</label>
-    <input type="text" name="sat_name" value=""><br>
-    <label for="country">Country</label>
-      <select id="country" name="country_id">
-      {{#each countries}}
-        <option value="{{_id}}">{{name}}</option>
-      {{/each}}
-      </select>
-    <input type="submit" value="Submit">
-  </form>
-
-   <ul>
+  <h4>Open List satellites</h4>
+  <button id='close_list_s'>Open list</button>
+   <ul id='satellite_l' class='hidden_block'>
     {{#each satellites}}
       <li>
         <form action="/api/delete_item/" method="post">
@@ -120,6 +126,13 @@
   <script type="module">
 
   const countries = (() => {
+    let close_button_c = document.querySelector('#close_list_c');
+    let close_button_s = document.querySelector('#close_list_s');
+    let ul_c = document.querySelector('#country_l');
+    let ul_s = document.querySelector('#satellite_l');
+    close_button_c.onclick = (e) => ul_c.classList.toggle('hidden_block');
+    close_button_s.onclick = (e) => ul_s.classList.toggle('hidden_block');
+  
 
     function collectedFunc(listSelector, paginatSelector, inputsSelector, items_type){
       let page_num = 1;
@@ -140,7 +153,7 @@
         const _res_json = await fetch('/api/get_items', params).then(response => response.json());
         console.log(_res_json, 'res')
 
-        _res_json.rows.map(n => createButton(items_list, n.doc.name, 'li'));
+        _res_json.rows.map(n => createButton(items_list, `${n.doc.name}, id: ${n.doc._id}`, 'li'));
         quantity = _res_json.total_rows;
 
         const funcPrev = () => {
