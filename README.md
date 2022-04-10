@@ -11,14 +11,14 @@ During the development, the following functionality was implemented:
 
 ### Query elements by unique id
 Request forms by id are located on the main page under the headings:
-**Find country by id /api/country** 
-**Find satellite by id /api/satellite**
+* Find country by id /api/country
+* Find satellite by id /api/satellite
 
 
-### Viewing the list of elements of each type by page (output is available in the amount of 3, 5 or 10 elements per page).
-Forms for requests are implemented in blocks:
-**Get countries** 
-**Get satellites**
+### Viewing the list of elements of each type by page
+Output is available in the amount of 3, 5 or 10 elements per page).  Forms for requests are implemented in blocks:
+* Get countries
+* Get satellites
 
 ###  Getting related elements
 The type of connection of conditional "entities" in this application is similar
@@ -29,7 +29,8 @@ we will get the country that launched it. Information is displayed in
 other page, which also has a back button.
 
 ### Search for elements by an arbitrary string key.
-Search form is in the block: **Search for an object**
+Search form is in the block: 
+* Search item 
 
 When a string is sent, searching is happaning for all
 database records, by the name field. Field values starting with
@@ -74,5 +75,4 @@ $cd nodet
 3. Enter the instructions 
 
 $docker-compose up --build
-
 
