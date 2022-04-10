@@ -151,7 +151,6 @@
         items_list.innerHTML = '';
         let params = { method: 'POST', headers: { "Content-type": "application/json" }, body: JSON.stringify({page_num, limit, items_type})};
         const _res_json = await fetch('/api/get_items', params).then(response => response.json());
-        console.log(_res_json, 'res')
 
         _res_json.rows.map(n => createButton(items_list, `${n.doc.name}, id: ${n.doc._id}`, 'li'));
         quantity = _res_json.total_rows;

@@ -16,7 +16,6 @@ app.use(express.static(__dirname + '/public'));
 const temp = async () => {
   const dblist = await nano.db.list()
   const doclist = await satellite_db.list({include_docs: true})
-  //console.log(doclist.rows.map(n=>n.doc), 'ALLLLL')
 }
 
 temp()
@@ -36,12 +35,9 @@ const root = {
     fs.writeFile("json_data.txt", JSON.stringify( doclist ), function(error){
 
     let data = fs.readFileSync("txt.txt", "utf8");
-    console.log(data);  // выводим считанные данные
     });
     */
 
-    console.log(doclist.rows.map(n=>n.doc), 'DDDDDDDDDDdd')
-    //console.log(doclist, "DDDDDDddd")
     return doclist.rows.map(n=>n.doc);
   },
 
@@ -130,7 +126,6 @@ app.use(bodyParser.urlencoded({extended: false}));
 app.get("/", async function(req, res){
   
   root.getAllItems().then(doclist => {
-    console.log(doclist, 'doclist')
     res.render('index', {
       'data': doclist,
       'countries': doclist.filter(n => n.type == 'country'),
@@ -148,7 +143,6 @@ app.post("/api/get_items", async(req, res) => {
 
   if(page_num && limit && type){
     root.getItemsByPages(page_num, limit, 'satellite_n', 'by_'+type).then(doc => {
-      console.log(doc, 'doc')
       res.json(doc);
     }).catch(err =>{
       res.send(err);
