@@ -15,8 +15,7 @@ Request forms by id are located on the main page under the headings:
 **Find satellite by id /api/satellite**
 
 
-### Просмотр списка элементов каждой сущности постранично (доступен вывод в количестве 3, 5 или 10 записей на странице). 
-Viewing the list of elements of each type by page (output is available in the amount of 3, 5 or 10 elements per page).
+### Viewing the list of elements of each type by page (output is available in the amount of 3, 5 or 10 elements per page).
 Forms for requests are implemented in blocks:
 **Get countries** 
 **Get satellites**
