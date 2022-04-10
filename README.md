@@ -9,19 +9,19 @@ and one page for showing results of some of the requests.
 
 During the development, the following functionality was implemented:
 
-##### Query elements by unique id
+### Query elements by unique id
 Request forms by id are located on the main page under the headings:
 **Find country by id /api/country** 
 **Find satellite by id /api/satellite**
 
 
-##### Просмотр списка элементов каждой сущности постранично (доступен вывод в количестве 3, 5 или 10 записей на странице). 
+### Просмотр списка элементов каждой сущности постранично (доступен вывод в количестве 3, 5 или 10 записей на странице). 
 Viewing the list of elements of each type by page (output is available in the amount of 3, 5 or 10 elements per page).
 Forms for requests are implemented in blocks:
 **Get countries** 
 **Get satellites**
 
-#####  Getting related elements
+###  Getting related elements
 The type of connection of conditional "entities" in this application is similar
 OneToMany (One satellite is launched by one country, however each country
 can launch many satellites), so after request a country by id we
@@ -29,7 +29,7 @@ get all the satellites launched by this country, and after we request of satelli
 we will get the country that launched it. Information is displayed in
 other page, which also has a back button.
 
-##### Search for elements by an arbitrary string key.
+### Search for elements by an arbitrary string key.
 Search form is in the block: **Search for an object**
 
 When a string is sent, searching is happaning for all
