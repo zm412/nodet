@@ -30,18 +30,10 @@ const root = {
       },
     };
     const doclist = await satellite_db.list({include_docs: true});
-    //const doclist = await satellite_db.find(q);
-    /*
-    fs.writeFile("json_data.txt", JSON.stringify( doclist ), function(error){
-
-    let data = fs.readFileSync("txt.txt", "utf8");
-    });
-    */
-
     return doclist.rows.map(n=>n.doc);
   },
 
-  getCountry: async(id) => {
+  getCountry: async({id}) => {
     const doc = await satellite_db.get(id, {include_docs: true});
     if(doc.type == 'country'){
       name = doc.name;
@@ -51,11 +43,14 @@ const root = {
         },
       };
       const doclist = await satellite_db.find(q);
-      return { 'country_name': [name], 'satellites': doclist.docs };
+      doc.satellites = doclist.docs;
+      //console.log(doc, 'doc')
+      return doc;
+      //return { 'country_name': [name], 'satellites': doclist.docs };
     }
   },
 
-  getSatellite: async(id) => {
+  getSatellite: async({ id }) => {
     const doc = await satellite_db.get(id, {include_docs: true});
       if(doc.type == 'satellite'){
           const q = {
@@ -65,11 +60,41 @@ const root = {
           };
 
          const country = await satellite_db.get(doc.country_id, {include_docs: true});
-         return { 'country_name': [country.name], 'satellites': [doc] };
+        doc.countries = [ country ]
+        console.log(doc, 'doc')
+         //return { 'country_name': [country.name], 'satellites': [doc] };
+        return doc
       }
   },
+  getCountriesByPages: async({ page_num, limit_num}) => {
+    const queryOptions = {
+      reduce:false,
+      limit: limit_num,
+      skip:(page_num-1 )*limit_num,
+      include_docs: true
+    };
 
-  getItemsByPages: async(page_num, limit_num, viewFamilyName, viewName) => {
+    const doclist = await satellite_db.view( 'satellite_n', 'by_country', queryOptions);
+    //console.log(doclist.rows.map(n=>n.doc), 'doclist')
+    return doclist.rows.map(n=> n.doc);
+  },
+
+
+  getSatellitesByPages: async({ page_num, limit_num}) => {
+    const queryOptions = {
+      reduce:false,
+      limit: limit_num,
+      skip:(page_num-1 )*limit_num,
+      include_docs: true
+    };
+
+    const doclist = await satellite_db.view( 'satellite_n', 'by_satellite', queryOptions);
+    //console.log(doclist.rows.map(n=>n.doc), 'doclist')
+    return doclist.rows.map(n=> n.doc);
+  },
+
+
+  getItemsByPages: async({ page_num, limit_num, viewFamilyName, viewName }) => {
     const queryOptions = {
       reduce:false,
       limit: limit_num,
@@ -78,18 +103,20 @@ const root = {
     };
 
     const doclist = await satellite_db.view( viewFamilyName, viewName, queryOptions);
+    console.log(doclist, 'doclist')
     return doclist;
   },
 
-  searchItemByName: async(str) => {
+  searchItemByName: async({ str }) => {
     const q = {
        "selector": {
           "_id": { "$gt": null },
           "name": { "$regex": '^' + str  }
          }
       }
-
-    return await satellite_db.find(q);
+    let doc = await satellite_db.find(q);
+    console.log(doc.docs, 'doc')
+    return doc.docs 
   },
 
   createCountry: async(name) => {
